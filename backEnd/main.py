@@ -10,16 +10,14 @@ start the redis database
 to start the API type
     $ uvicorn main:app --reload
 
-
 """
 import sys as system
 from fastapi import FastAPI
-import json
-import redis
 import mariadb
+from DBs.RedisDB import RedisDB
 
 app = FastAPI()
-db = redis.Redis(host='localhost', port=6379, decode_responses=True)
+redisDB = RedisDB.__init__()
 
 try:
 
@@ -40,12 +38,12 @@ cur = connection.cursor()
 
 @app.post("/data/redis")
 def addItem(q: str, v: int):
-    return {"query": addData(q, v)}
+    return {"query": redisDB.addData(q, v)}
 
 
 @app.get("/data/redis")
 def getItem(q: str):
-    return {"data": getDataValue(q)}
+    return {"data": redisDB.getValueFromKey(q)}
 
 
 @app.get("/data/mariaDB")
@@ -61,28 +59,10 @@ def getTable(table: str):
     try:
         connection.reconnect()
         cur.execute("SELECT * FROM exit_logger")
-        # fetch all the matching rows
-        result = cur.fetchall()
-        # loop through the rows
-        returnResult = ""
-        return result
+
+        return cur.fetchall()
 
     except mariadb.Error as error:
         return {"Error": error}
 
 
-# redis
-def addData(key: str, value: int):
-    db.set(key, value)
-
-
-def getDataValue(key: str):
-    return db.get(key)
-
-
-def flush():
-    db.flushall()
-
-
-def getKeys():
-    return db.keys()
